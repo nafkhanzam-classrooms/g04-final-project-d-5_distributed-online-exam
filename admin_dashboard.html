@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DOES - Admin Control Center</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 font-sans leading-normal tracking-normal p-8">
+
+    <div class="max-w-6xl mx-auto">
+        <div class="bg-white rounded-lg shadow p-6 mb-8 flex justify-between items-center">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-800">DOES Admin Control Center</h1>
+                <p class="text-gray-500">Pemantauan Ujian Real-Time & Hasil Evaluasi</p>
+            </div>
+            <div class="flex space-x-4 items-center">
+                <label class="font-semibold text-gray-700">Exam ID:</label>
+                <input type="number" id="examIdInput" value="1" class="border rounded px-3 py-2 w-20 text-center font-bold">
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div class="bg-white rounded-lg shadow p-6 border-t-4 border-blue-500">
+                <h2 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                    📡 Live Monitoring 
+                    <span id="pingIndicator" class="ml-2 h-3 w-3 bg-green-500 rounded-full animate-ping"></span>
+                </h2>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full text-left">
+                        <thead>
+                            <tr class="bg-gray-100 text-gray-600 uppercase text-sm leading-normal">
+                                <th class="py-3 px-6">Mahasiswa</th>
+                                <th class="py-3 px-6 text-center">Status</th>
+                                <th class="py-3 px-6 text-right">Terakhir Aktif</th>
+                            </tr>
+                        </thead>
+                        <tbody id="monitoringTable" class="text-gray-600 text-sm font-light">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow p-6 border-t-4 border-green-500">
+                <h2 class="text-xl font-bold text-gray-800 mb-4">🏆 Hasil Ujian Masuk</h2>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full text-left">
+                        <thead>
+                            <tr class="bg-gray-100 text-gray-600 uppercase text-sm leading-normal">
+                                <th class="py-3 px-6">Mahasiswa</th>
+                                <th class="py-3 px-6">Jawaban</th>
+                                <th class="py-3 px-6 text-center">Skor</th>
+                            </tr>
+                        </thead>
+                        <tbody id="resultsTable" class="text-gray-600 text-sm font-light">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = "http://localhost:8001";
+
+        async function fetchMonitoring() {
+            const examId = document.getElementById("examIdInput").value;
+            try {
+                const response = await fetch(`${API_BASE_URL}/admin/monitoring/${examId}`);
+                const data = await response.json();
+                
+                const tbody = document.getElementById("monitoringTable");
+                tbody.innerHTML = ""; // Bersihkan tabel
+                
+                data.forEach(student => {
+                    // Warna badge berdasarkan status
+                    const isOnline = student.status === "Online";
+                    const badgeClass = isOnline ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700";
+                    const icon = isOnline ? "🟢" : "🔴";
+                    
+                    const row = `
+                        <tr class="border-b border-gray-200 hover:bg-gray-50">
+                            <td class="py-3 px-6 font-bold">${student.username}</td>
+                            <td class="py-3 px-6 text-center">
+                                <span class="${badgeClass} py-1 px-3 rounded-full text-xs font-bold shadow-sm">
+                                    ${icon} ${student.status}
+                                </span>
+                            </td>
+                            <td class="py-3 px-6 text-right">${student.last_active}</td>
+                        </tr>
+                    `;
+                    tbody.innerHTML += row;
+                });
+            } catch (error) {
+                console.error("Gagal mengambil data monitoring:", error);
+            }
+        }
+
+        async function fetchResults() {
+            const examId = document.getElementById("examIdInput").value;
+            try {
+                const response = await fetch(`${API_BASE_URL}/admin/results/${examId}`);
+                const data = await response.json();
+                
+                const tbody = document.getElementById("resultsTable");
+                tbody.innerHTML = "";
+                
+                data.forEach(result => {
+                    const row = `
+                        <tr class="border-b border-gray-200 hover:bg-gray-50">
+                            <td class="py-3 px-6 font-bold">${result.username}</td>
+                            <td class="py-3 px-6 italic">"${result.submitted_answer}"</td>
+                            <td class="py-3 px-6 text-center font-bold text-blue-600">${result.score}</td>
+                        </tr>
+                    `;
+                    tbody.innerHTML += row;
+                });
+            } catch (error) {
+                console.error("Gagal mengambil hasil ujian:", error);
+            }
+        }
+
+        // Panggil fungsi pertama kali
+        fetchMonitoring();
+        fetchResults();
+
+        // 🔄 AUTO-REFRESH MAGIC: Ambil data monitoring setiap 3 detik!
+        setInterval(fetchMonitoring, 3000);
+        
+        // Refresh hasil ujian setiap 5 detik
+        setInterval(fetchResults, 5000);
+    </script>
+</body>
+</html>

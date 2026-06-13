@@ -1,0 +1,73 @@
+services:
+  # ---------------------------------------------
+  # DATABASE BARU KITA (MYSQL)
+  # ---------------------------------------------
+  db:
+    image: mysql:8.0
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword     # Password sakti untuk admin
+      MYSQL_DATABASE: does_db               # Nama database otomatis dibuat
+      MYSQL_USER: does_user                 # Username untuk aplikasi kita
+      MYSQL_PASSWORD: does_password         # Password untuk aplikasi kita
+    ports:
+      - "3306:3306"                         # Membuka port agar bisa diintip dari Windows
+    volumes:
+      - mysql_data:/var/lib/mysql           # Menyimpan data permanen agar tidak hilang saat mati
+  # 1. FastAPI (Auth & Admin)
+  auth-web:
+    build: .
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8001
+    ports:
+      - "8001:8001"
+    depends_on:
+      - db # Memastikan database menyala sebelum web menyala
+    volumes:
+      - .:/app # Memungkinkan hot-reload saat Anda mengedit kode
+
+  # 2. Grading Service (gRPC)
+  grading-service:
+    build: .
+    command: python grading_service/grading_server.py
+    ports:
+      - "50051:50051"
+    volumes:
+      - .:/app
+
+  # 3. Exam Server (TCP)
+  exam-server:
+    build: .
+    command: python exam_server.py
+    environment:
+      - PYTHONUNBUFFERED=1 
+    #ports:
+    #  - "9000:9000"
+    depends_on:
+      - grading-service # Pastikan grading menyala lebih dulu
+    volumes:
+      - .:/app
+    deploy:
+      replicas: 3
+
+  # 4. Monitoring Server (UDP)
+  monitoring-server:
+    build: .
+    command: python monitoring_server.py
+    ports:
+      - "9001:9001/udp" # Perhatikan tag /udp
+    volumes:
+      - .:/app
+  # 5. Nginx Load Balancer
+  nginx-lb:
+    image: nginx:latest
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - "9000:9000" # Nginx yang memegang port utama
+    depends_on:
+      - exam-server
+  # ---------------------------------------------
+  # PENYIMPANAN PERMANEN (WAJIB ADA DI PALING BAWAH)
+  # ---------------------------------------------
+volumes:
+  mysql_data:

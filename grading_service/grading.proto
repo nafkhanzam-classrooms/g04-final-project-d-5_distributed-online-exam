@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package grading;
+
+// Layanan yang disediakan oleh Grading Service
+service GradingService {
+  rpc GradeSubmission (GradeRequest) returns (GradeResponse) {}
+}
+
+// Format data yang dikirim dari Exam Server ke Grading Service
+message GradeRequest {
+  int32 user_id = 1;
+  int32 question_id = 2;
+  string submitted_answer = 3;
+}
+
+// Format balasan dari Grading Service ke Exam Server
+message GradeResponse {
+  bool is_correct = 1;
+  int32 score = 2;
+  string feedback = 3;
+}

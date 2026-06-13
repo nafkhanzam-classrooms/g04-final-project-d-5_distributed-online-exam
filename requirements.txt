@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+sqlalchemy
+PyJWT
+grpcio
+grpcio-tools
+bcrypt
+pymysql
+aiomysql
