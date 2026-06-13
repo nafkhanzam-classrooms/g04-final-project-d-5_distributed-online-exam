@@ -84,3 +84,16 @@ Aplikasi antarmuka yang berada di luar Docker (dioperasikan di sisi pengguna/*ho
 1. **Jalankan Docker Compose:**
    ```bash
    docker-compose up -d --build
+2. **Suntikkan Data Awal (Seeding):**
+(Tunggu 15-20 detik hingga MySQL siap setelah booting pertama)
+
+   ```bash
+   docker-compose exec auth-web python seed_db.py
+   ```
+3. Mulai Pengujian/Ujian:
+
+- Untuk Dosen: Buka file `admin_dashboard.html` di browser apa pun.
+
+- Untuk Mahasiswa: Jalankan `python student_gui.py` di terminal lokal Anda, login, dan kerjakan ujian.
+
+- Untuk Stress Test: Jalankan `python stress_test.py` untuk mensimulasikan ribuan sesi konkuren.
